@@ -18,9 +18,12 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.inventory.data.InventoryContract.InventoryEntry;
+
+import org.w3c.dom.Text;
 
 public class EditorActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
 
@@ -37,7 +40,7 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     private EditText mPriceEditText;
 
     /** EditText field to enter the product's quantity */
-    private EditText mQuantityEditText;
+    private TextView mQuantityEditText;
 
     /** EditText field to enter the product's supplier */
     private EditText mSupplierEditText;
@@ -92,9 +95,58 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         // Find all relevant views that we will need to read user input from
         mNameEditText = (EditText) findViewById(R.id.edit_product_name);
         mPriceEditText = (EditText) findViewById(R.id.edit_product_price);
-        mQuantityEditText = (EditText) findViewById(R.id.edit_product_quantity);
+        mQuantityEditText = (TextView) findViewById(R.id.edit_product_quantity);
         mSupplierEditText = (EditText) findViewById(R.id.edit_supplier_name);
         mPhoneEditText = (EditText) findViewById(R.id.edit_supplier_phone);
+
+        final TextView qty = (TextView) findViewById(R.id.edit_product_quantity);
+
+        // Increment button for quantity
+        findViewById(R.id.plus_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String currentQty = qty.getText().toString();
+                if (TextUtils.isEmpty(currentQty) || currentQty == null) {
+                    currentQty = String.valueOf(0);
+                }
+                int qtyInt = Integer.parseInt(currentQty);
+                qtyInt++;
+                qty.setText(String.valueOf(qtyInt));
+            }
+        });
+
+        // Decrement button for quantity
+        findViewById(R.id.minus_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String currentQty = qty.getText().toString();
+                if (TextUtils.isEmpty(currentQty) || currentQty == null) {
+                    currentQty = String.valueOf(0);
+                }
+                int qtyInt = Integer.parseInt(currentQty);
+                if (qtyInt == 0) {
+                    Toast.makeText(getApplicationContext(), R.string.invalid_quantity, Toast.LENGTH_LONG).show();
+                } else {
+                    qtyInt--;
+                    qty.setText(String.valueOf(qtyInt));
+                }
+            }
+        });
+
+        // Order button that sends phone intent
+        findViewById(R.id.order_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText phoneEditText = (EditText) findViewById(R.id.edit_supplier_phone);
+                String phone = phoneEditText.getText().toString();
+                Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel: " + phone));
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getApplicationContext(), R.string.unable_to_call, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         // Setup OnTouchListeners on all input fields.
         // This will let us know if there are unsaved changes
@@ -121,8 +173,8 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         // Check if this is supposed to be a new product
         // and check if all the fields in the editor are blank
         if (mCurrentProductUri == null &&
-                TextUtils.isEmpty(nameString) && TextUtils.isEmpty(priceString) &&
-                TextUtils.isEmpty(quantityString) && TextUtils.isEmpty(supplierString) &&
+                TextUtils.isEmpty(nameString) || TextUtils.isEmpty(priceString) ||
+                TextUtils.isEmpty(quantityString) || TextUtils.isEmpty(supplierString) ||
                 TextUtils.isEmpty(phoneString)) {
 
             // Since no fields were modified, we can return early without creating a new product.
